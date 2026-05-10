@@ -1,0 +1,178 @@
+<!-- =====================================================
+     DASHBOARD — AurumWatch
+     ===================================================== -->
+<div class="dashboard animate-in">
+
+  <!-- ── Page Header ── -->
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Tableau de Bord</h1>
+      <p class="page-sub">Monitoring géopolitique & alertes trading or en temps réel</p>
+    </div>
+    <div class="gold-price-widget">
+      <span class="gp-label">XAU/USD</span>
+      <span class="gp-value">3 247.40</span>
+      <span class="gp-delta up">▲ +0.82%</span>
+    </div>
+  </div>
+
+  <!-- ── Stats Row ── -->
+  <div class="stats-grid" *ngIf="trading.stats$ | async as s">
+    <div class="stat-card">
+      <div class="stat-card__icon">⬡</div>
+      <div class="stat-card__body">
+        <div class="stat-card__value">{{ s.total }}</div>
+        <div class="stat-card__label">Total Alertes</div>
+      </div>
+      <div class="stat-card__bar" [style.width.%]="100" style="background:var(--navy-500)"></div>
+    </div>
+
+    <div class="stat-card stat-card--red">
+      <div class="stat-card__icon">🔴</div>
+      <div class="stat-card__body">
+        <div class="stat-card__value">{{ s.critique }}</div>
+        <div class="stat-card__label">Critiques</div>
+      </div>
+    </div>
+
+    <div class="stat-card stat-card--orange">
+      <div class="stat-card__icon">🟠</div>
+      <div class="stat-card__body">
+        <div class="stat-card__value">{{ s.elevee }}</div>
+        <div class="stat-card__label">Élevées</div>
+      </div>
+    </div>
+
+    <div class="stat-card stat-card--gold">
+      <div class="stat-card__icon">📈</div>
+      <div class="stat-card__body">
+        <div class="stat-card__value">{{ s.buy_signals }}</div>
+        <div class="stat-card__label">Signaux BUY</div>
+      </div>
+    </div>
+
+    <div class="stat-card stat-card--red2">
+      <div class="stat-card__icon">📉</div>
+      <div class="stat-card__body">
+        <div class="stat-card__value">{{ s.sell_signals }}</div>
+        <div class="stat-card__label">Signaux SELL</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Main Grid ── -->
+  <div class="main-grid">
+
+    <!-- LEFT: Monitoring Launcher -->
+    <div class="card monitor-card">
+      <div class="card__header">
+        <span class="card__title">◈ Lancer le Monitoring</span>
+        <span class="badge badge--bas">NewsAPI + Groq AI</span>
+      </div>
+      <div class="card__body">
+
+        <!-- Period Selector -->
+        <div class="field-group">
+          <label class="field-label">Période d'analyse</label>
+          <div class="day-picker">
+            <button
+              *ngFor="let d of dayOptions"
+              class="day-btn"
+              [class.active]="selectedDays === d"
+              (click)="selectedDays = d"
+            >{{ d }}j</button>
+          </div>
+        </div>
+
+        <div class="divider-gold"></div>
+
+        <!-- Progress Bar -->
+        <div class="progress-wrap" *ngIf="isMonitoring">
+          <div class="progress-bar">
+            <div class="progress-fill" [style.width.%]="progress"></div>
+          </div>
+          <span class="progress-label">Analyse en cours... {{ progress | number:'1.0-0' }}%</span>
+        </div>
+
+        <!-- Launch Button -->
+        <button
+          class="btn btn--gold launch-btn"
+          (click)="startMonitoring()"
+          [disabled]="isMonitoring"
+        >
+          <span *ngIf="!isMonitoring">⬡ Démarrer l'analyse</span>
+          <span *ngIf="isMonitoring" class="flex-center gap-8">
+            <span class="loader-ring small"></span> Analyse en cours…
+          </span>
+        </button>
+
+        <!-- Success Message -->
+        <div class="success-msg animate-in" *ngIf="monitorDone">
+          <span class="success-icon">✓</span>
+          Monitoring terminé — Consultez l'onglet <strong>Alertes</strong>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- RIGHT: Countries Coverage -->
+    <div class="card">
+      <div class="card__header">
+        <span class="card__title">◉ Pays Surveillés</span>
+        <span class="badge badge--moyen">{{ countries.length }} marchés</span>
+      </div>
+      <div class="card__body countries-list">
+        <div class="country-row" *ngFor="let c of countries">
+          <div class="country-flag">
+            <span *ngIf="c.name === 'USA'">🇺🇸</span>
+            <span *ngIf="c.name === 'China'">🇨🇳</span>
+            <span *ngIf="c.name === 'Russia'">🇷🇺</span>
+            <span *ngIf="c.name === 'Israel'">🇮🇱</span>
+            <span *ngIf="c.name === 'Europe'">🇪🇺</span>
+            <span *ngIf="c.name === 'India'">🇮🇳</span>
+          </div>
+          <div class="country-name">{{ c.name }}</div>
+          <div class="country-impact" [ngClass]="getImpactClass(c.impact)">{{ c.impact }}</div>
+          <div class="country-indicator"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- FULL ROW: Signal Distribution -->
+    <div class="card signal-card" *ngIf="trading.stats$ | async as s">
+      <div class="card__header">
+        <span class="card__title">⬡ Distribution des Signaux</span>
+      </div>
+      <div class="card__body signal-chart">
+        <div class="signal-bar-group">
+          <div class="signal-label">BUY GOLD</div>
+          <div class="signal-track">
+            <div class="signal-fill signal-fill--buy"
+              [style.width.%]="statPercent(s.buy_signals, s.total)">
+            </div>
+          </div>
+          <div class="signal-pct">{{ statPercent(s.buy_signals, s.total) }}%</div>
+        </div>
+        <div class="signal-bar-group">
+          <div class="signal-label">SELL GOLD</div>
+          <div class="signal-track">
+            <div class="signal-fill signal-fill--sell"
+              [style.width.%]="statPercent(s.sell_signals, s.total)">
+            </div>
+          </div>
+          <div class="signal-pct">{{ statPercent(s.sell_signals, s.total) }}%</div>
+        </div>
+        <div class="signal-bar-group">
+          <div class="signal-label">WAIT</div>
+          <div class="signal-track">
+            <div class="signal-fill signal-fill--wait"
+              [style.width.%]="statPercent(s.wait_signals, s.total)">
+            </div>
+          </div>
+          <div class="signal-pct">{{ statPercent(s.wait_signals, s.total) }}%</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>

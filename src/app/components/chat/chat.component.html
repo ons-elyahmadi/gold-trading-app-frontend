@@ -1,0 +1,161 @@
+<!-- =====================================================
+     CHAT — AurumWatch AI Analyst
+     ===================================================== -->
+<div class="chat-page animate-in">
+
+  <!-- ── Sidebar ── -->
+  <aside class="chat-sidebar">
+    <div class="sidebar-header">
+      <div class="ai-avatar">
+        <span class="avatar-icon">◈</span>
+        <div class="avatar-ring"></div>
+      </div>
+      <div>
+        <div class="ai-name">AURUM AI</div>
+        <div class="ai-status">
+          <span class="status-dot"></span> Analyste Actif
+        </div>
+      </div>
+    </div>
+
+    <div class="divider-gold"></div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-section__title">Questions Suggérées</div>
+      <div class="suggestions-list">
+        <button
+          *ngFor="let s of suggestions"
+          class="suggestion-btn"
+          (click)="send(s)"
+          [disabled]="isTyping"
+        >
+          {{ s }}
+        </button>
+      </div>
+    </div>
+
+    <div class="sidebar-bottom">
+      <button class="btn btn--outline clear-btn" (click)="clearChat()">
+        ✕ Effacer la conversation
+      </button>
+    </div>
+  </aside>
+
+  <!-- ── Chat Window ── -->
+  <div class="chat-window card">
+
+    <!-- Header -->
+    <div class="chat-header">
+      <div class="chat-header__left">
+        <span class="chat-header__title">
+          ◈ Analyste IA — Marché de l'Or
+        </span>
+        <span class="chat-header__sub">
+          Propulsé par Groq · LLaMA 3.3 70B
+        </span>
+      </div>
+
+      <div class="chat-header__badges">
+        <span class="badge badge--bas">IA Active</span>
+        <span class="badge badge--moyen">
+          {{ messages.length - 1 }} messages
+        </span>
+
+        <!-- ✅ EXPORT PDF BUTTON -->
+        <button class="btn btn--outline export-btn" (click)="exportChatToPDF()">
+          ⬇ Exporter PDF
+        </button>
+      </div>
+    </div>
+
+    <!-- Messages -->
+    <div class="messages-container" #messagesContainer>
+
+      <!-- Suggestions initiales -->
+      <div class="suggestion-chips" *ngIf="showSuggestions && messages.length === 1">
+        <p class="chips-hint">Commencez par une question :</p>
+        <div class="chips-wrap">
+          <button
+            *ngFor="let s of suggestions.slice(0, 4)"
+            class="chip"
+            (click)="send(s)"
+          >
+            {{ s }}
+          </button>
+        </div>
+      </div>
+
+      <!-- Messages list -->
+      <div
+        *ngFor="let msg of messages"
+        class="message"
+        [class.message--user]="msg.role === 'user'"
+        [class.message--assistant]="msg.role === 'assistant'"
+      >
+
+        <div class="message__avatar" *ngIf="msg.role === 'assistant'">
+          ◈
+        </div>
+
+        <div class="message__bubble">
+          <div class="message__content"
+               [innerHTML]="formatContent(msg.content)">
+          </div>
+
+          <div class="message__time">
+            {{ msg.timestamp | date:'HH:mm' }}
+          </div>
+        </div>
+
+        <div class="message__avatar message__avatar--user"
+             *ngIf="msg.role === 'user'">
+          ✦
+        </div>
+
+      </div>
+
+      <!-- Typing -->
+      <div class="message message--assistant" *ngIf="isTyping">
+        <div class="message__avatar">◈</div>
+        <div class="message__bubble typing-bubble">
+          <div class="typing-dots">
+            <span></span><span></span><span></span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Input -->
+    <div class="chat-input-area">
+      <div class="input-wrap">
+        <textarea
+          class="chat-textarea"
+          [(ngModel)]="inputText"
+          (keydown)="onKeydown($event)"
+          placeholder="Posez votre question sur le marché de l'or…"
+          rows="1"
+          [disabled]="isTyping"
+        ></textarea>
+
+        <button
+          class="send-btn"
+          (click)="send()"
+          [disabled]="!inputText.trim() || isTyping"
+        >
+          <span *ngIf="!isTyping">➤</span>
+          <span *ngIf="isTyping"
+                class="loader-ring"
+                style="width:18px;height:18px;border-width:2px">
+          </span>
+        </button>
+      </div>
+
+      <div class="input-hint">
+        <kbd>Enter</kbd> pour envoyer · <kbd>Shift+Enter</kbd> pour nouvelle ligne
+      </div>
+    </div>
+
+  </div>
+
+</div>

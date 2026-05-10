@@ -1,0 +1,151 @@
+<!-- =====================================================
+     ALERTS — AurumWatch
+     ===================================================== -->
+<div class="alerts-page animate-in">
+
+  <!-- ── Header ── -->
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Alertes & Signaux</h1>
+      <p class="page-sub">Classées par sévérité · Analyse Groq AI</p>
+    </div>
+    <div class="header-actions">
+      <span class="result-count">
+        <span class="count-num">{{ filteredAlerts.length }}</span> alerte(s)
+      </span>
+      <button class="btn btn--outline" (click)="exportJSON()">
+        ↓ Exporter JSON
+      </button>
+    </div>
+  </div>
+
+  <!-- ── Filters Bar ── -->
+  <div class="filters-bar card">
+    <div class="filter-group">
+      <label class="filter-label">Pays</label>
+      <select class="filter-select" [(ngModel)]="selectedCountry" (change)="applyFilters()">
+        <option value="">Tous</option>
+        <option *ngFor="let c of countries.slice(1)" [value]="c">{{ c }}</option>
+      </select>
+    </div>
+
+    <div class="filter-group">
+      <label class="filter-label">Priorité</label>
+      <select class="filter-select" [(ngModel)]="selectedPriority" (change)="applyFilters()">
+        <option value="">Toutes</option>
+        <option *ngFor="let p of priorities.slice(1)" [value]="p">{{ p }}</option>
+      </select>
+    </div>
+
+    <div class="filter-group">
+      <label class="filter-label">Signal</label>
+      <select class="filter-select" [(ngModel)]="selectedAction" (change)="applyFilters()">
+        <option value="">Tous</option>
+        <option *ngFor="let a of actions.slice(1)" [value]="a">{{ a }}</option>
+      </select>
+    </div>
+
+    <button class="btn btn--outline filter-reset"
+      (click)="selectedCountry=''; selectedPriority=''; selectedAction=''; applyFilters()">
+      ✕ Reset
+    </button>
+  </div>
+
+  <!-- ── Loading ── -->
+  <div class="empty-state" *ngIf="isLoading">
+    <div class="loader-ring"></div>
+    <p>Chargement des alertes…</p>
+  </div>
+
+  <!-- ── Empty State ── -->
+  <div class="empty-state" *ngIf="!isLoading && filteredAlerts.length === 0">
+    <div class="empty-icon">◈</div>
+    <p>Aucune alerte. Lancez le monitoring depuis le Dashboard.</p>
+  </div>
+
+  <!-- ── Alert Cards ── -->
+  <div class="alerts-list" *ngIf="!isLoading && filteredAlerts.length > 0">
+    <div
+      class="alert-card card"
+      *ngFor="let alert of filteredAlerts; trackBy: trackById"
+      [class.expanded]="expandedId === alert.id"
+      [attr.data-priority]="alert.priority"
+    >
+      <!-- Card Top Row -->
+      <div class="alert-card__top" (click)="toggleExpand(alert.id)">
+
+        <div class="alert-meta">
+          <span class="badge" [ngClass]="priorityClass(alert.priority)">
+            <span *ngIf="alert.priority === 'CRITIQUE'">⚠ CRITIQUE</span>
+            <span *ngIf="alert.priority === 'ÉLEVÉE'">● ÉLEVÉE</span>
+            <span *ngIf="alert.priority === 'MOYEN'">◈ MOYEN</span>
+            <span *ngIf="alert.priority === 'BAS'">◯ BAS</span>
+          </span>
+
+          <span class="badge" [ngClass]="actionClass(alert.analysis.action)">
+            {{ alert.analysis.action }}
+          </span>
+
+          <span class="alert-country">
+            <span *ngIf="alert.country === 'USA'">🇺🇸</span>
+            <span *ngIf="alert.country === 'China'">🇨🇳</span>
+            <span *ngIf="alert.country === 'Russia'">🇷🇺</span>
+            <span *ngIf="alert.country === 'Israel'">🇮🇱</span>
+            <span *ngIf="alert.country === 'Europe'">🇪🇺</span>
+            <span *ngIf="alert.country === 'India'">🇮🇳</span>
+            {{ alert.country }}
+          </span>
+
+          <span class="alert-source">{{ alert.source }}</span>
+        </div>
+
+        <div class="alert-title-row">
+          <h3 class="alert-title">{{ alert.title }}</h3>
+          <div class="alert-time">{{ alert.timestamp | date:'dd/MM HH:mm' }}</div>
+        </div>
+
+        <div class="alert-summary">{{ alert.analysis.resume }}</div>
+
+        <!-- Quick Scores -->
+        <div class="quick-scores">
+          <div class="score-chip">
+            <span class="score-chip__label">Sévérité</span>
+            <span class="score-chip__value">{{ alert.analysis.severite }}/10</span>
+          </div>
+          <div class="score-chip">
+            <span class="score-chip__label">Safe-Haven</span>
+            <span class="score-chip__value">{{ alert.analysis.safe_haven }}</span>
+          </div>
+          <div class="score-chip" [ngClass]="priceClass(alert.analysis.prix_or)">
+            <span class="score-chip__label">Prix Or</span>
+            <span class="score-chip__value">
+              <span *ngIf="alert.analysis.prix_or === 'hausse'">▲</span>
+              <span *ngIf="alert.analysis.prix_or === 'baisse'">▼</span>
+              <span *ngIf="alert.analysis.prix_or === 'neutre'">◆</span>
+              {{ alert.analysis.prix_or | uppercase }}
+            </span>
+          </div>
+        </div>
+
+        <div class="expand-toggle">
+          {{ expandedId === alert.id ? '▲ Réduire' : '▼ Analyse complète' }}
+        </div>
+      </div>
+
+      <!-- Expanded Body -->
+      <div class="alert-card__body" *ngIf="expandedId === alert.id">
+        <div class="divider-gold"></div>
+        <div class="raw-analysis">
+          <div class="raw-label">◈ Analyse Brute (Groq AI)</div>
+          <pre class="raw-content">{{ alert.analysis.raw }}</pre>
+        </div>
+        <div class="alert-link-row">
+          <a [href]="alert.url" target="_blank" class="btn btn--outline source-link">
+            ↗ Voir l'article source
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
